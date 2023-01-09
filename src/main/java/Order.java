@@ -1,6 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
-
+//Класс для сериализации
 public class Order {
     private String firstName;
     private String lastName;

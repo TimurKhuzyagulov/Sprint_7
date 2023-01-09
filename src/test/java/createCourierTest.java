@@ -9,7 +9,7 @@ import org.junit.Test;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 
-
+//Тесты для создания курьера
 public class createCourierTest {
 
     static int id;

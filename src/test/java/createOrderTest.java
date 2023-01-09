@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.notNullValue;
 
-
+//тест для создания заказа
 @RunWith(Parameterized.class)
 public class createOrderTest {
 

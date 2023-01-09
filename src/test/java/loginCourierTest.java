@@ -9,6 +9,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
 
+//Тест для логина курьера
 public class loginCourierTest {
 
     Courier courier = new Courier("qaTestHTF2", "0526", "Khuzyagulov");
