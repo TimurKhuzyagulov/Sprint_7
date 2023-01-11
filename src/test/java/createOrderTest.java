@@ -1,6 +1,5 @@
 import io.qameta.allure.junit4.DisplayName;
-import io.restassured.RestAssured;
-import io.restassured.response.Response;
+import io.restassured.response.ValidatableResponse;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -8,13 +7,15 @@ import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
 
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.apache.http.HttpStatus.SC_CREATED;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 //тест для создания заказа
 @RunWith(Parameterized.class)
 public class createOrderTest {
 
+    static OrderApi orderApi;
     final private String firstNameParam;
     final private String lastNameParam;
     final private String addressParam;
@@ -35,9 +36,10 @@ public class createOrderTest {
         this.deliveryDateParam = deliveryDateParam;
         this.commentParam = commentParam;
         this.colorParam = colorParam;
+
     }
 
-    @Parameterized.Parameters
+    @Parameterized.Parameters(name = "Тестовые данные: {0} {1} {2} {3} {4} {5} {6} {7}")
     public static Object[][] getTestData() {
         return new Object[][]{
                 {"Ivan", "Petrov", "str.Lenina", "Frunzinskya", "+79194965999", 5, "2023-01-16", "No comments", "Black"},
@@ -49,7 +51,8 @@ public class createOrderTest {
 
     @Before
     public void setUp() {
-        RestAssured.baseURI = "https://qa-scooter.praktikum-services.ru";
+        orderApi = new OrderApi();
+        //  RestAssured.baseURI = "https://qa-scooter.praktikum-services.ru";
     }
 
     @Test
@@ -57,29 +60,21 @@ public class createOrderTest {
     public void createOrderTest() {
         Order order = new Order(firstNameParam, lastNameParam, addressParam, metroStationParam, phoneParam, rentTimeParam, deliveryDateParam, commentParam, colorParam);
 
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(order)
-                .when()
-                .post("/api/v1/orders");
-
-        response.then().assertThat().statusCode(201);
+        ValidatableResponse response = orderApi.create(order);
+        int statusCode = response.extract().statusCode();
+        assertEquals(SC_CREATED, statusCode);
     }
 
     @Test
     @DisplayName("Проверка создания заказа c одним цветом") // имя теста
     public void createOrderOneColor() {
         Order orderOneColor = new Order(firstNameParam, lastNameParam, addressParam, metroStationParam, phoneParam, rentTimeParam, deliveryDateParam, commentParam, colorParam);
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(orderOneColor)
-                .when()
-                .post("/api/v1/orders");
 
-        response.then().assertThat().statusCode(201)
-                .and()
-                .body("track", notNullValue());
-
+        ValidatableResponse response = orderApi.create(orderOneColor);
+        int statusCode = response.extract().statusCode();
+        int valTrack = response.extract().path("track");
+        assertEquals(SC_CREATED, statusCode);
+        assertNotNull(valTrack);
     }
 
     @Test
@@ -90,31 +85,23 @@ public class createOrderTest {
         manyColor.add("Grey");
         Order orderManyColor = new Order(firstNameParam, lastNameParam, addressParam, metroStationParam, phoneParam, rentTimeParam, deliveryDateParam, commentParam, manyColor);
 
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(orderManyColor)
-                .when()
-                .post("/api/v1/orders");
-
-        response.then().assertThat().statusCode(201)
-                .and()
-                .body("track", notNullValue());
-
+        ValidatableResponse response = orderApi.create(orderManyColor);
+        int statusCode = response.extract().statusCode();
+        int valTrack = response.extract().path("track");
+        assertEquals(SC_CREATED, statusCode);
+        assertNotNull(valTrack);
     }
 
     @Test
     @DisplayName("Проверка создания заказа без цвета") // имя теста
     public void createOrderWithOutColor() {
         Order orderWithOutColor = new Order(firstNameParam, lastNameParam, addressParam, metroStationParam, phoneParam, rentTimeParam, deliveryDateParam, commentParam);
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(orderWithOutColor)
-                .when()
-                .post("/api/v1/orders");
+        ValidatableResponse response = orderApi.create(orderWithOutColor);
+        int statusCode = response.extract().statusCode();
+        int valTrack = response.extract().path("track");
+        assertEquals(SC_CREATED, statusCode);
+        assertNotNull(valTrack);
 
-        response.then().assertThat().statusCode(201)
-                .and()
-                .body("track", notNullValue());
     }
 
 }
