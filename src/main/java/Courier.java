@@ -1,5 +1,5 @@
 public class Courier {
-
+//Класс для сериализации
     private String login;
     private String password;
     private String firstName;

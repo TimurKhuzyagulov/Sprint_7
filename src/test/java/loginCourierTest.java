@@ -1,21 +1,22 @@
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
-import io.restassured.RestAssured;
-import io.restassured.response.Response;
+import io.restassured.response.ValidatableResponse;
 import org.junit.Before;
 import org.junit.Test;
 
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.apache.http.HttpStatus.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
+//Тест для логина курьера
 public class loginCourierTest {
 
     Courier courier = new Courier("qaTestHTF2", "0526", "Khuzyagulov");
+    CourierApi courierApi;
 
     @Before
     public void setUp() {
-        RestAssured.baseURI = "https://qa-scooter.praktikum-services.ru";
+        courierApi = new CourierApi();
     }
 
     @Test
@@ -23,16 +24,12 @@ public class loginCourierTest {
     @Description("Проверка того, в резултате успешной авторизации возвращается не пустой id") // описание теста
     public void authCourierSuccessTest() {
 
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(courier)
-                .when()
-                .post("/api/v1/courier/login");
+        ValidatableResponse response = courierApi.login(courier);
+        int statusCode = response.extract().statusCode();
+        int valId = response.extract().path("id");
+        assertEquals(SC_OK, statusCode);
+        assertNotNull(valId);
 
-        response.then().assertThat()
-                .statusCode(200)
-                .and()
-                .body("id", notNullValue());
 
     }
 
@@ -42,17 +39,12 @@ public class loginCourierTest {
     public void authCourierWithOutLoginTest() {
         Courier courierWithOutLogin = new Courier("", "1234", "");
 
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(courierWithOutLogin)
-                .when()
-                .post("/api/v1/courier/login");
+        ValidatableResponse response = courierApi.login(courierWithOutLogin);
 
-        response.then().assertThat()
-                .statusCode(400)
-                .and()
-                .body("message", equalTo("Недостаточно данных для входа"));
-
+        int statusCode = response.extract().statusCode();
+        String valMessage = response.extract().path("message");
+        assertEquals(SC_BAD_REQUEST, statusCode);
+        assertEquals("Недостаточно данных для входа", valMessage);
     }
 
     @Test
@@ -60,15 +52,11 @@ public class loginCourierTest {
     @Description("Проверка авторизации курьера без указания пароля") // описание теста
     public void authCourierWithOutPasswordTest() {
         Courier courierWithOutPassword = new Courier("TestQA", "", "");
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(courierWithOutPassword)
-                .when()
-                .post("/api/v1/courier/login");
 
-        response.then().assertThat()
-                .statusCode(400);
+        ValidatableResponse response = courierApi.login(courierWithOutPassword);
 
+        int statusCode = response.extract().statusCode();
+        assertEquals(SC_BAD_REQUEST, statusCode);
     }
 
     @Test
@@ -77,35 +65,25 @@ public class loginCourierTest {
     public void authCourierIncorrectPasswordTest() {
         Courier courierIncorrectPassword = new Courier("qaja", "12345", "qa_java");
 
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(courierIncorrectPassword)
-                .when()
-                .post("/api/v1/courier/login");
+        ValidatableResponse response = courierApi.login(courierIncorrectPassword);
 
-        response.then().assertThat()
-                .statusCode(404)
-                .and()
-                .body("message", equalTo("Учетная запись не найдена"));
-
+        int statusCode = response.extract().statusCode();
+        String valMessage = response.extract().path("message");
+        assertEquals(SC_NOT_FOUND, statusCode);
+        assertEquals("Учетная запись не найдена", valMessage);
     }
 
     @Test
     @DisplayName("Проверка авторизации курьера с неправильным или не существующим логином") // имя теста
     @Description("Проверка авторизации курьера с неправильным или не существующим логином") // описание теста
     public void authCourierIncorrectLoginTest() {
-        Courier courierIncorrectLogin = new Courier("qaja9785", "1234", "qa_java");
+        Courier courierIncorrectLogin = new Courier("qaja_bad_login", "1234", "qa_java");
 
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(courierIncorrectLogin)
-                .when()
-                .post("/api/v1/courier/login");
+        ValidatableResponse response = courierApi.login(courierIncorrectLogin);
 
-        response.then().assertThat()
-                .statusCode(404)
-                .and()
-                .body("message", equalTo("Учетная запись не найдена"));
-
+        int statusCode = response.extract().statusCode();
+        String valMessage = response.extract().path("message");
+        assertEquals(SC_NOT_FOUND, statusCode);
+        assertEquals("Учетная запись не найдена", valMessage);
     }
 }

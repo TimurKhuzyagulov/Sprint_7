@@ -1,49 +1,45 @@
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
-import io.restassured.RestAssured;
-import io.restassured.response.Response;
+import io.restassured.response.ValidatableResponse;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.equalTo;
+import static org.apache.http.HttpStatus.*;
+import static org.junit.Assert.assertEquals;
 
-
+//Тесты для создания курьера
 public class createCourierTest {
 
+
     static int id;
-    Courier courier = new Courier("qaTestHTF_1", "0526", "Khuzyagulov");
+    Courier courier = new Courier("qaTestHTF_001", "0526", "Khuzyagulov");
+    static CourierApi courierApi;
 
     @Before
     public void setUp() {
-        RestAssured.baseURI = "https://qa-scooter.praktikum-services.ru";
+
+        courierApi = new CourierApi();
     }
 
     @AfterClass
     public static void cleanUp() {
-
-        given().delete("/api/v1/courier/" + id);
+        courierApi.delete(id);
     }
 
     @Test
     @DisplayName("Проверка создания курьера") // имя теста
     @Description("Проверка того, что курьер успешно создается") // описание теста
     public void createCourierAnswerTest() {
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(courier)
-                .when()
-                .post("/api/v1/courier");
 
-        response.then().assertThat()
-                .statusCode(201)
-                .and()
-                .body("ok", equalTo(true));
+        ValidatableResponse response = courierApi.create(courier);
+        int statusCode = response.extract().statusCode();
+        boolean valOk = response.extract().path("ok");
+        assertEquals(SC_CREATED, statusCode);
+        assertEquals(true, valOk);
 
-        Response responseLogin = given().header("Content-type", "application/json").body(courier).when().post("/api/v1/courier/login");
-        id = responseLogin.then().extract().path("id");
-
+        ValidatableResponse responseLogin = courierApi.login(courier);
+        id = responseLogin.extract().path("id");
     }
 
 
@@ -53,19 +49,12 @@ public class createCourierTest {
     public void createDoubleCourierTest() {
 
         Courier courierDouble = new Courier("qaja4test", "1234", "qa_java");
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(courierDouble)
-                .when()
-                .post("/api/v1/courier");
+        ValidatableResponse response = courierApi.create(courierDouble);
 
-        response.then().assertThat()
-                .statusCode(409)
-                .and()
-                .body("message", equalTo("Этот логин уже используется. Попробуйте другой."));
-
-
-        //System.out.println(response.body().asString());
+        int statusCode = response.extract().statusCode();
+        String valMessage = response.extract().path("message");
+        assertEquals(SC_CONFLICT, statusCode);
+        assertEquals("Этот логин уже используется. Попробуйте другой.", valMessage);
     }
 
     @Test
@@ -73,16 +62,12 @@ public class createCourierTest {
     @Description("Проверка создания курьера без логина") // описание теста
     public void createCourierWithOutLoginTest() {
         Courier courierWithOutLogin = new Courier("", "1234", "courierWithOutLogin");
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(courierWithOutLogin)
-                .when()
-                .post("/api/v1/courier");
+        ValidatableResponse response = courierApi.create(courierWithOutLogin);
 
-        response.then().assertThat()
-                .statusCode(400)
-                .and()
-                .body("message", equalTo("Недостаточно данных для создания учетной записи"));
+        int statusCode = response.extract().statusCode();
+        String valMessage = response.extract().path("message");
+        assertEquals(SC_BAD_REQUEST, statusCode);
+        assertEquals("Недостаточно данных для создания учетной записи", valMessage);
     }
 
     @Test
@@ -90,16 +75,12 @@ public class createCourierTest {
     @Description("Проверка создания курьера без пароля") // описание теста
     public void createCourierWithOutPasswordTest() {
         Courier courierWithOutPassword = new Courier("TestQA", "", "courierWithOutPassword");
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(courierWithOutPassword)
-                .when()
-                .post("/api/v1/courier");
+        ValidatableResponse response = courierApi.create(courierWithOutPassword);
 
-        response.then().assertThat()
-                .statusCode(400)
-                .and()
-                .body("message", equalTo("Недостаточно данных для создания учетной записи"));
+        int statusCode = response.extract().statusCode();
+        String valMessage = response.extract().path("message");
+        assertEquals(SC_BAD_REQUEST, statusCode);
+        assertEquals("Недостаточно данных для создания учетной записи", valMessage);
     }
 
 
